@@ -1,0 +1,10 @@
+config:
+  clients:
+    - url: http://loki.logging.svc.cluster.local:3100/loki/api/v1/push
+      tenant_id: 1
+
+serviceMonitor:
+  enabled: true 
+
+extraArgs:
+  - -client.external-labels=cluster=cluster-notebook

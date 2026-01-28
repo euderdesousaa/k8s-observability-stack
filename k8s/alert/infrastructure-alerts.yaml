@@ -1,0 +1,43 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: infrastructure-alerts
+  labels:
+    release: prometheus-stack
+spec:
+  groups:
+  - name: system-resources
+    rules:
+
+    - alert: NodeMemoryCritical
+      expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+      for: 5m
+      labels:
+        priority: critical
+      annotations:
+        summary: "Low available memory on node {{ $labels.instance }}"
+        description: "The node has only {{ $value | printf \"%.2f\" }}% of memory available."
+
+    - alert: NodeHighCPUUsage
+      expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100 > 90
+      for: 5m
+      labels:
+        priority: critical
+      annotations:
+        summary: "High CPU usage on node {{ $labels.instance }}"
+        description: "CPU usage has been above 90% for more than 5 minutes."
+
+
+    - alert: PodsInErrorState
+      expr: |
+        count by (namespace) (
+          kube_pod_container_status_waiting_reason{
+            reason=~"ImagePullBackOff|ErrImagePull|CrashLoopBackOff"
+          }
+        ) > 0
+      for: 5m
+      labels:
+        priority: critical
+      annotations:
+        summary: "Pods in error state in namespace {{ $labels.namespace }}"
+        description: "There are containers in ImagePullBackOff, ErrImagePull or CrashLoopBackOff state."

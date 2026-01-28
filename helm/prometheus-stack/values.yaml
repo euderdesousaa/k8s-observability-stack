@@ -1,0 +1,44 @@
+grafana:
+  enabled: true
+  initChownData:
+    enabled: false
+  service:
+    type: NodePort
+    nodePort: 32101
+  
+  persistence:
+    enabled: true
+    size: 5Gi
+    accessModes: ["ReadWriteOnce"]
+
+prometheus:
+  prometheusSpec:
+    resources:
+      requests:
+        memory: "512Mi"
+      limits:
+        memory: "1Gi"
+alertmanager:
+  alertmanagerSpec:
+    secrets:
+      - alertmanager-smtp-password
+      
+  config:
+    global:
+      smtp_smarthost: 'smtp.gmail.com:587'
+      smtp_from: 'your-sender-email'
+      smtp_auth_username: 'your-sender-email'
+      smtp_auth_password_file: '/etc/alertmanager/secrets/alertmanager-smtp-password/password'
+      smtp_require_tls: true
+
+    route:
+      group_by: ['alertname']
+      receiver: 'email-receiver'
+      routes: [] 
+
+    receivers:
+    - name: 'email-receiver'
+      email_configs:
+      - to: 'your-receiver-email'
+        send_resolved: true
+
